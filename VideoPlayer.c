@@ -1,11 +1,11 @@
 #include "VideoPlayer.h"
 
-VideoPlayer *createVideoPlayer(VideoFile *vf) {
+VideoPlayer* createVideoPlayer(VideoFile* vf) {
 	if (vf == NULL) {
 		return NULL;
 	}
 
-	VideoPlayer *vp = (VideoPlayer *)malloc(sizeof(VideoPlayer));
+	VideoPlayer* vp = (VideoPlayer*)malloc(sizeof(VideoPlayer));
 	if (vp == NULL) {
 		return NULL;
 	}
@@ -18,8 +18,8 @@ VideoPlayer *createVideoPlayer(VideoFile *vf) {
 		destroyVideoPlayer(vp);
 		return NULL;
 	}
-	vp->width = 256;
-	vp->height = 144;
+	vp->width = screenBounds.w;
+	vp->height = screenBounds.h;
 
 	vp->videoFrameQueue = createFrameQueue((size_t)av_q2d(vf->pFormatContext->streams[vf->pVideoStream->streamIndex]->r_frame_rate), vp->width * vp->height * 4);
 	if (vp->videoFrameQueue == NULL) {
@@ -48,7 +48,7 @@ VideoPlayer *createVideoPlayer(VideoFile *vf) {
 	return vp;
 }
 
-void destroyVideoPlayer(VideoPlayer *vp) {
+void destroyVideoPlayer(VideoPlayer* vp) {
 	if (vp == NULL) {
 		return;
 	}
@@ -63,10 +63,10 @@ void destroyVideoPlayer(VideoPlayer *vp) {
 	sws_freeContext(vp->videoConvertContext);
 	swr_free(&vp->audioConvertContext);
 
-	free((void *)vp);
+	free((void*)vp);
 }
 
-void startVideoPlayer(VideoPlayer *vp) {
+void startVideoPlayer(VideoPlayer* vp) {
 	if (vp == NULL) {
 		return;
 	}
@@ -93,7 +93,7 @@ void startVideoPlayer(VideoPlayer *vp) {
 		return;
 	}
 
-	vp->videoFramePixelBuffer = (uint8_t *)malloc(vp->width * vp->height * 4);
+	vp->videoFramePixelBuffer = (uint8_t*)malloc(vp->width * vp->height * 4);
 	if (vp->videoFramePixelBuffer == NULL) {
 		SDL_DestroyTexture(vp->videoFrameTexture);
 		vp->videoFrameTexture = NULL;
@@ -107,7 +107,7 @@ void startVideoPlayer(VideoPlayer *vp) {
 	SDL_AudioSpec desired, received;
 	memset(&desired, 0, sizeof(SDL_AudioSpec));
 	desired.callback = audioCallbackVideoPlayer;
-	desired.userdata = (void *)vp;
+	desired.userdata = (void*)vp;
 	desired.channels = vp->vf->pAudioStream->pStreamCodecContext->channels;
 	desired.format = AUDIO_F32;
 	desired.freq = vp->vf->pAudioStream->pStreamCodecContext->sample_rate;
@@ -116,7 +116,7 @@ void startVideoPlayer(VideoPlayer *vp) {
 
 	vp->audioDeviceID = SDL_OpenAudioDevice(NULL, 0, &desired, &received, 0);
 	if (vp->audioDeviceID == 0) {
-		free((void *)vp->videoFramePixelBuffer);
+		free((void*)vp->videoFramePixelBuffer);
 		vp->videoFramePixelBuffer = NULL;
 		SDL_DestroyTexture(vp->videoFrameTexture);
 		vp->videoFrameTexture = NULL;
@@ -128,10 +128,10 @@ void startVideoPlayer(VideoPlayer *vp) {
 	}
 	SDL_PauseAudioDevice(vp->audioDeviceID, 1);
 
-	vp->audioSampleBuffer = (uint8_t *)malloc(received.size);
+	vp->audioSampleBuffer = (uint8_t*)malloc(received.size);
 	if (vp->audioSampleBuffer == NULL) {
 		SDL_CloseAudioDevice(vp->audioDeviceID);
-		free((void *)vp->videoFramePixelBuffer);
+		free((void*)vp->videoFramePixelBuffer);
 		vp->videoFramePixelBuffer = NULL;
 		SDL_DestroyTexture(vp->videoFrameTexture);
 		vp->videoFrameTexture = NULL;
@@ -144,8 +144,8 @@ void startVideoPlayer(VideoPlayer *vp) {
 	vp->audioSampleQueue = createAudioQueue(received.size * 16);
 	if (vp->audioSampleQueue == NULL) {
 		SDL_CloseAudioDevice(vp->audioDeviceID);
-		free((void *)vp->audioSampleBuffer);
-		free((void *)vp->videoFramePixelBuffer);
+		free((void*)vp->audioSampleBuffer);
+		free((void*)vp->videoFramePixelBuffer);
 		vp->videoFramePixelBuffer = NULL;
 		SDL_DestroyTexture(vp->videoFrameTexture);
 		vp->videoFrameTexture = NULL;
@@ -155,10 +155,10 @@ void startVideoPlayer(VideoPlayer *vp) {
 		vp->window = NULL;
 	}
 
-	vp->demuxThread = SDL_CreateThread(demuxThreadVideoPlayer, "demux thread", (void *)vp);
-	vp->decodeAudioThread = SDL_CreateThread(decodeAudioThreadVideoPlayer, "audio decode thread", (void *)vp);
-	vp->decodeVideoThread = SDL_CreateThread(decodeVideoThreadVideoPlayer, "video decode thread", (void *)vp);
-	vp->renderVideoThread = SDL_CreateThread(renderVideoThreadVideoPlayer, "video render thread", (void *)vp);
+	vp->demuxThread = SDL_CreateThread(demuxThreadVideoPlayer, "demux thread", (void*)vp);
+	vp->decodeAudioThread = SDL_CreateThread(decodeAudioThreadVideoPlayer, "audio decode thread", (void*)vp);
+	vp->decodeVideoThread = SDL_CreateThread(decodeVideoThreadVideoPlayer, "video decode thread", (void*)vp);
+	vp->renderVideoThread = SDL_CreateThread(renderVideoThreadVideoPlayer, "video render thread", (void*)vp);
 
 	while (!vp->quit) {
 		SDL_Event evnt;
@@ -183,8 +183,8 @@ void startVideoPlayer(VideoPlayer *vp) {
 
 	destroyAudioQueue(vp->audioSampleQueue);
 	SDL_CloseAudioDevice(vp->audioDeviceID);
-	free((void *)vp->audioSampleBuffer);
-	free((void *)vp->videoFramePixelBuffer);
+	free((void*)vp->audioSampleBuffer);
+	free((void*)vp->videoFramePixelBuffer);
 	vp->videoFramePixelBuffer = NULL;
 	SDL_DestroyTexture(vp->videoFrameTexture);
 	vp->videoFrameTexture = NULL;
@@ -194,13 +194,13 @@ void startVideoPlayer(VideoPlayer *vp) {
 	vp->window = NULL;
 }
 
-void audioCallbackVideoPlayer(void *userdata, uint8_t *dst, int len) {
-	VideoPlayer *vp = (VideoPlayer *)userdata;
+void audioCallbackVideoPlayer(void* userdata, uint8_t* dst, int len) {
+	VideoPlayer* vp = (VideoPlayer*)userdata;
 	pullAudioQueue(vp->audioSampleQueue, dst, len);
 }
 
-int demuxThreadVideoPlayer(void *data) {
-	VideoPlayer *vp = (VideoPlayer *)data;
+int demuxThreadVideoPlayer(void* data) {
+	VideoPlayer* vp = (VideoPlayer*)data;
 	double audioBaseTime = vp->vf->pAudioStream->baseTime;
 	double videoBaseTime = vp->vf->pVideoStream->baseTime;
 	const double queueDelta = 6.0;
@@ -208,7 +208,7 @@ int demuxThreadVideoPlayer(void *data) {
 	while (!checkEndedPacketQueue(vp->vf->pVideoStream->pq) && !checkEndedPacketQueue(vp->vf->pVideoStream->pq)) {
 		if (getTimePacketQueue(vp->vf->pVideoStream->pq) * videoBaseTime < queueDelta ||
 			getTimePacketQueue(vp->vf->pAudioStream->pq) * audioBaseTime < queueDelta) {
-			AVPacket *pPacket = av_packet_alloc();
+			AVPacket* pPacket = av_packet_alloc();
 			int read = av_read_frame(vp->vf->pFormatContext, pPacket);
 
 			if (read == 0) {
@@ -235,16 +235,16 @@ int demuxThreadVideoPlayer(void *data) {
 	return 0;
 }
 
-int decodeAudioThreadVideoPlayer(void *data) {
-	VideoPlayer *vp = (VideoPlayer *)data;
+int decodeAudioThreadVideoPlayer(void* data) {
+	VideoPlayer* vp = (VideoPlayer*)data;
 
 	double audioBaseTime = vp->vf->pAudioStream->baseTime;
 
-	AVFrame *pAudioSample = av_frame_alloc();
-	AVFrame *pDecodedSample = av_frame_alloc();
+	AVFrame* pAudioSample = av_frame_alloc();
+	AVFrame* pDecodedSample = av_frame_alloc();
 
 	while (!checkEndedAudioQueue(vp->audioSampleQueue)) {
-		AVPacket *pPacket = NULL;
+		AVPacket* pPacket = NULL;
 		pullPacketQueue(vp->vf->pAudioStream->pq, &pPacket);
 		if (pPacket == NULL) {
 			break;
@@ -272,20 +272,20 @@ int decodeAudioThreadVideoPlayer(void *data) {
 	return 0;
 }
 
-int decodeVideoThreadVideoPlayer(void *data) {
-	VideoPlayer *vp = (VideoPlayer *)data;
+int decodeVideoThreadVideoPlayer(void* data) {
+	VideoPlayer* vp = (VideoPlayer*)data;
 
 	double videoBaseTime = vp->vf->pVideoStream->baseTime;
 
-	AVFrame *pVideoFrame = av_frame_alloc();
-	AVFrame *pDecodedFrame = av_frame_alloc();
+	AVFrame* pVideoFrame = av_frame_alloc();
+	AVFrame* pDecodedFrame = av_frame_alloc();
 	pDecodedFrame->width = vp->width;
 	pDecodedFrame->height = vp->height;
 	pDecodedFrame->format = AV_PIX_FMT_RGBA;
 	av_frame_get_buffer(pDecodedFrame, 1);
 
 	while (!checkEndedFrameQueue(vp->videoFrameQueue)) {
-		AVPacket *pPacket = NULL;
+		AVPacket* pPacket = NULL;
 		pullPacketQueue(vp->vf->pVideoStream->pq, &pPacket);
 		if (pPacket == NULL) {
 			break;
@@ -295,7 +295,7 @@ int decodeVideoThreadVideoPlayer(void *data) {
 		int received = avcodec_receive_frame(vp->vf->pVideoStream->pStreamCodecContext, pVideoFrame);
 
 		if (sent == 0 && received == 0 && !vp->quit) {
-			sws_scale(vp->videoConvertContext, pVideoFrame->data, pVideoFrame->linesize, 0, pVideoFrame->height, pDecodedFrame->data, pDecodedFrame->linesize);
+			sws_scale(vp->videoConvertContext, (const uint8_t* const*)pVideoFrame->data, pVideoFrame->linesize, 0, pVideoFrame->height, pDecodedFrame->data, pDecodedFrame->linesize);
 			pushFrameQueue(vp->videoFrameQueue, pDecodedFrame->data[0], pVideoFrame->pts * videoBaseTime);
 		}
 
@@ -307,8 +307,8 @@ int decodeVideoThreadVideoPlayer(void *data) {
 	return 0;
 }
 
-int renderVideoThreadVideoPlayer(void *data) {
-	VideoPlayer *vp = (VideoPlayer *)data;
+int renderVideoThreadVideoPlayer(void* data) {
+	VideoPlayer* vp = (VideoPlayer*)data;
 
 	double fps = av_q2d(vp->vf->pFormatContext->streams[vp->vf->pVideoStream->streamIndex]->r_frame_rate);
 	uint32_t delay = (uint32_t)1000.0 / fps;

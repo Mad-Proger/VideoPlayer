@@ -2,7 +2,6 @@
 #include "VideoPlayer.h"
 
 int main(int argc, char* argv[]) {
-	freopen("log.txt", "w", stderr);
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	if (argc < 2) {

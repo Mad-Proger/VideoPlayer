@@ -3,15 +3,15 @@
 #include "MediaStream.h"
 
 typedef struct VideoFile {
-	AVFormatContext *pFormatContext;
-	MediaStream *pVideoStream;
-	MediaStream *pAudioStream;
+	AVFormatContext* pFormatContext;
+	MediaStream* pVideoStream;
+	MediaStream* pAudioStream;
 } VideoFile;
 
-VideoFile *allocVideoFile();
+VideoFile* allocVideoFile();
 
-int openVideoFile(VideoFile *vf, const char *filepath);
+int openVideoFile(VideoFile* vf, const char* filepath);
 
-int findMediaStreams(VideoFile *vf);
+int findMediaStreams(VideoFile* vf);
 
-void destroyVideoFile(VideoFile *vf);
+void destroyVideoFile(VideoFile* vf);
