@@ -14,7 +14,7 @@ FrameQueue* createFrameQueue(size_t queueSize, size_t frameSize) {
 		return NULL;
 	}
 
-	res->ts = (double*)malloc(queueSize * sizeof(uint8_t*));
+	res->ts = (double*)malloc(queueSize * sizeof(double));
 	if (res->ts == NULL) {
 		destroyFrameQueue(res);
 		return NULL;
@@ -79,7 +79,6 @@ void pushFrameQueue(FrameQueue* fq, const uint8_t* src, const double pt) {
 	if (fq->eof) {
 		return;
 	}
-
 	memcpy(fq->q[fq->r], src, fq->frameSize);
 	fq->ts[fq->r] = pt;
 	++fq->r;
