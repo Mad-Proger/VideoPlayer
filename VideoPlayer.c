@@ -20,7 +20,19 @@ VideoPlayer* createVideoPlayer(VideoFile* vf) {
 	}
 	vp->width = screenBounds.w;
 	vp->height = screenBounds.h;
-	vp->renderRect = screenBounds;
+
+	float srcAspectRatio = (float)vf->pVideoStream->pStreamCodecContext->width / vf->pVideoStream->pStreamCodecContext->height;
+	float dstAspectRatio = (float)vp->width / vp->height;
+
+	if (srcAspectRatio < dstAspectRatio) {
+		vp->renderRect.h = vp->height;
+		vp->renderRect.w = (int)(vp->renderRect.h * srcAspectRatio);
+	} else {
+		vp->renderRect.w = vp->width;
+		vp->renderRect.h = (int)(vp->renderRect.w / srcAspectRatio);
+	}
+	vp->renderRect.x = (vp->width - vp->renderRect.w) / 2;
+	vp->renderRect.y = (vp->height - vp->renderRect.h) / 2;
 
 	vp->videoFrameQueue = createFrameQueue((size_t)av_q2d(vf->pFormatContext->streams[vf->pVideoStream->streamIndex]->r_frame_rate), vp->renderRect.w * vp->renderRect.h * 4);
 	if (vp->videoFrameQueue == NULL) {
