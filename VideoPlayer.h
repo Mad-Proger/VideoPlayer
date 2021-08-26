@@ -17,6 +17,7 @@ typedef struct VideoPlayer {
 
 	int width;
 	int height;
+	SDL_Rect renderRect;
 	SDL_bool quit;
 	SDL_Window* window;
 	SDL_Renderer* renderer;

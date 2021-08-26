@@ -21,14 +21,27 @@ VideoPlayer* createVideoPlayer(VideoFile* vf) {
 	vp->width = screenBounds.w;
 	vp->height = screenBounds.h;
 
-	vp->videoFrameQueue = createFrameQueue((size_t)av_q2d(vf->pFormatContext->streams[vf->pVideoStream->streamIndex]->r_frame_rate), vp->width * vp->height * 4);
+	float srcAspectRatio = (float)vf->pVideoStream->pStreamCodecContext->width / vf->pVideoStream->pStreamCodecContext->height;
+	float dstAspectRatio = (float)vp->width / vp->height;
+
+	if (srcAspectRatio < dstAspectRatio) {
+		vp->renderRect.h = vp->height;
+		vp->renderRect.w = (int)(vp->renderRect.h * srcAspectRatio);
+	} else {
+		vp->renderRect.w = vp->width;
+		vp->renderRect.h = (int)(vp->renderRect.w / srcAspectRatio);
+	}
+	vp->renderRect.x = (vp->width - vp->renderRect.w) / 2;
+	vp->renderRect.y = (vp->height - vp->renderRect.h) / 2;
+
+	vp->videoFrameQueue = createFrameQueue((size_t)av_q2d(vf->pFormatContext->streams[vf->pVideoStream->streamIndex]->r_frame_rate), vp->renderRect.w * vp->renderRect.h * 4);
 	if (vp->videoFrameQueue == NULL) {
 		destroyVideoPlayer(vp);
 		return NULL;
 	}
 
 	vp->videoConvertContext = sws_getContext(vf->pVideoStream->pStreamCodecContext->width, vf->pVideoStream->pStreamCodecContext->height, vf->pVideoStream->pStreamCodecContext->pix_fmt,
-		vp->width, vp->height, AV_PIX_FMT_RGBA, SWS_BICUBIC, NULL, NULL, 0);
+		vp->renderRect.w, vp->renderRect.h, AV_PIX_FMT_RGBA, SWS_BICUBIC, NULL, NULL, 0);
 	if (vp->videoConvertContext == NULL) {
 		destroyVideoPlayer(vp);
 		return NULL;
@@ -84,7 +97,7 @@ void startVideoPlayer(VideoPlayer* vp) {
 		return;
 	}
 
-	vp->videoFrameTexture = SDL_CreateTexture(vp->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, vp->width, vp->height);
+	vp->videoFrameTexture = SDL_CreateTexture(vp->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, vp->renderRect.w, vp->renderRect.h);
 	if (vp->videoFrameTexture == NULL) {
 		SDL_DestroyRenderer(vp->renderer);
 		vp->renderer = NULL;
@@ -93,7 +106,7 @@ void startVideoPlayer(VideoPlayer* vp) {
 		return;
 	}
 
-	vp->videoFramePixelBuffer = (uint8_t*)malloc(vp->width * vp->height * 4);
+	vp->videoFramePixelBuffer = (uint8_t*)malloc(vp->renderRect.w * vp->renderRect.h * 4);
 	if (vp->videoFramePixelBuffer == NULL) {
 		SDL_DestroyTexture(vp->videoFrameTexture);
 		vp->videoFrameTexture = NULL;
@@ -335,8 +348,8 @@ int renderVideoThreadVideoPlayer(void* data) {
 
 		SDL_RenderClear(vp->renderer);
 		pullFrameQueue(vp->videoFrameQueue, vp->videoFramePixelBuffer);
-		SDL_UpdateTexture(vp->videoFrameTexture, NULL, vp->videoFramePixelBuffer, vp->width * 4);
-		SDL_RenderCopy(vp->renderer, vp->videoFrameTexture, NULL, NULL);
+		SDL_UpdateTexture(vp->videoFrameTexture, NULL, vp->videoFramePixelBuffer, vp->renderRect.w * 4);
+		SDL_RenderCopy(vp->renderer, vp->videoFrameTexture, NULL, &vp->renderRect);
 		SDL_RenderPresent(vp->renderer);
 
 		uint32_t elapsedTime = SDL_GetTicks() - beginTicks;
