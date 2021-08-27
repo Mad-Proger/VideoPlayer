@@ -35,14 +35,14 @@ VideoPlayer* createVideoPlayer(VideoFile* vf) {
 	vp->renderRect.y = (vp->height - vp->renderRect.h) / 2;
 
 	vp->videoFrameQueue = createFrameQueue((size_t)av_q2d(vf->pFormatContext->streams[vf->pVideoStream->streamIndex]->r_frame_rate),
-		AV_PIX_FMT_RGBA, vp->renderRect.w, vp->renderRect.h);
+		AV_PIX_FMT_YUYV422, vp->renderRect.w, vp->renderRect.h);
 	if (vp->videoFrameQueue == NULL) {
 		destroyVideoPlayer(vp);
 		return NULL;
 	}
 
 	vp->videoConvertContext = sws_getContext(vf->pVideoStream->pStreamCodecContext->width, vf->pVideoStream->pStreamCodecContext->height, vf->pVideoStream->pStreamCodecContext->pix_fmt,
-		vp->renderRect.w, vp->renderRect.h, AV_PIX_FMT_RGBA, SWS_BICUBIC, NULL, NULL, 0);
+		vp->renderRect.w, vp->renderRect.h, AV_PIX_FMT_YUYV422, SWS_BICUBIC, NULL, NULL, 0);
 	if (vp->videoConvertContext == NULL) {
 		destroyVideoPlayer(vp);
 		return NULL;
@@ -98,7 +98,7 @@ void startVideoPlayer(VideoPlayer* vp) {
 		return;
 	}
 
-	vp->videoFrameTexture = SDL_CreateTexture(vp->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, vp->renderRect.w, vp->renderRect.h);
+	vp->videoFrameTexture = SDL_CreateTexture(vp->renderer, SDL_PIXELFORMAT_YUY2, SDL_TEXTUREACCESS_STREAMING, vp->renderRect.w, vp->renderRect.h);
 	if (vp->videoFrameTexture == NULL) {
 		SDL_DestroyRenderer(vp->renderer);
 		vp->renderer = NULL;
@@ -276,7 +276,7 @@ int decodeVideoThreadVideoPlayer(void* data) {
 	AVFrame* pDecodedFrame = av_frame_alloc();
 	pDecodedFrame->width = vp->renderRect.w;
 	pDecodedFrame->height = vp->renderRect.h;
-	pDecodedFrame->format = AV_PIX_FMT_RGBA;
+	pDecodedFrame->format = AV_PIX_FMT_YUYV422;
 	av_frame_get_buffer(pDecodedFrame, 0);
 
 	while (!checkEndedFrameQueue(vp->videoFrameQueue)) {
