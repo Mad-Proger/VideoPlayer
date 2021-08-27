@@ -2,10 +2,8 @@
 #include "include.h"
 
 typedef struct FrameQueue {
-	uint8_t** q;
-	double* ts;
-	double presentationTime;
-	size_t frameSize;
+	AVFrame** q;
+	int64_t pts;
 	size_t maxSize;
 	size_t size;
 	size_t l;
@@ -16,13 +14,13 @@ typedef struct FrameQueue {
 	SDL_cond* cond;
 } FrameQueue;
 
-FrameQueue* createFrameQueue(size_t queueSize, size_t frameSize);
+FrameQueue* createFrameQueue(size_t queueSize, int pixelFormat, int width, int height);
 
 void destroyFrameQueue(FrameQueue* fq);
 
-void pushFrameQueue(FrameQueue* fq, const uint8_t* src, const double pt);
+void pushFrameQueue(FrameQueue* fq, const AVFrame* src);
 
-void pullFrameQueue(FrameQueue* fq, uint8_t* dst);
+void pullFrameQueue(FrameQueue* fq, SDL_Texture* dst);
 
 SDL_bool checkEndedFrameQueue(FrameQueue* fq);
 
@@ -30,4 +28,4 @@ void setEndedFrameQueue(FrameQueue* fq);
 
 size_t getSizeFrameQueue(FrameQueue* fq);
 
-double getPresentationTimeFrameQueue(FrameQueue* fq);
+int64_t getPTSFrameQueue(FrameQueue* fq);

@@ -1,28 +1,30 @@
 #include "FrameQueue.h"
 
-FrameQueue* createFrameQueue(size_t queueSize, size_t frameSize) {
+FrameQueue* createFrameQueue(size_t queueSize, int pixelFormat, int width, int height) {
 	FrameQueue* res = (FrameQueue*)malloc(sizeof(FrameQueue));
 	if (res == NULL) {
 		return NULL;
 	}
 	memset(res, 0, sizeof(FrameQueue));
-	res->frameSize = frameSize;
 
-	res->q = (uint8_t**)malloc(queueSize * sizeof(uint8_t*));
+	res->q = (AVFrame**)malloc(queueSize * sizeof(AVFrame*));
 	if (res->q == NULL) {
 		destroyFrameQueue(res);
 		return NULL;
 	}
 
-	res->ts = (double*)malloc(queueSize * sizeof(double));
-	if (res->ts == NULL) {
-		destroyFrameQueue(res);
-		return NULL;
-	}
-
 	for (size_t i = 0; i < queueSize; ++i) {
-		res->q[i] = (uint8_t*)malloc(frameSize);
+		res->q[i] = av_frame_alloc();
 		if (res->q[i] == NULL) {
+			destroyFrameQueue(res);
+			return NULL;
+		}
+
+		res->q[i]->format = pixelFormat;
+		res->q[i]->width = width;
+		res->q[i]->height = height;
+
+		if (av_frame_get_buffer(res->q[i], 0) < 0) {
 			destroyFrameQueue(res);
 			return NULL;
 		}
@@ -54,11 +56,11 @@ void destroyFrameQueue(FrameQueue* fq) {
 
 	if (fq->q != NULL) {
 		for (size_t i = 0; i < fq->maxSize; ++i) {
-			free((void*)fq->q[i]);
+			av_frame_unref(fq->q[i]);
+			av_frame_free(fq->q + i);
 		}
 	}
 	free((void*)fq->q);
-	free((void*)fq->ts);
 
 	SDL_DestroyMutex(fq->mutex);
 	SDL_DestroyCond(fq->cond);
@@ -66,7 +68,7 @@ void destroyFrameQueue(FrameQueue* fq) {
 	free((void*)fq);
 }
 
-void pushFrameQueue(FrameQueue* fq, const uint8_t* src, const double pt) {
+void pushFrameQueue(FrameQueue* fq, const AVFrame* src) {
 	if (fq == NULL) {
 		return;
 	}
@@ -79,8 +81,9 @@ void pushFrameQueue(FrameQueue* fq, const uint8_t* src, const double pt) {
 	if (fq->eof) {
 		return;
 	}
-	memcpy(fq->q[fq->r], src, fq->frameSize);
-	fq->ts[fq->r] = pt;
+
+	fq->q[fq->r]->pts = src->pts;
+	av_frame_copy(fq->q[fq->r], src);
 	++fq->r;
 	if (fq->r >= fq->maxSize) {
 		fq->r -= fq->maxSize;
@@ -91,7 +94,7 @@ void pushFrameQueue(FrameQueue* fq, const uint8_t* src, const double pt) {
 	SDL_UnlockMutex(fq->mutex);
 }
 
-void pullFrameQueue(FrameQueue* fq, uint8_t* dst) {
+void pullFrameQueue(FrameQueue* fq, SDL_Texture* dst) {
 	if (fq == NULL) {
 		return;
 	}
@@ -101,8 +104,8 @@ void pullFrameQueue(FrameQueue* fq, uint8_t* dst) {
 		SDL_CondWait(fq->cond, fq->mutex);
 	}
 
-	memcpy(dst, fq->q[fq->l], fq->frameSize);
-	fq->presentationTime = fq->ts[fq->l];
+	SDL_UpdateTexture(dst, NULL, fq->q[fq->l]->data[0], fq->q[fq->l]->linesize[0]);
+	fq->pts = fq->q[fq->l]->pts;
 	++fq->l;
 	if (fq->l >= fq->maxSize) {
 		fq->l -= fq->maxSize;
@@ -146,13 +149,13 @@ size_t getSizeFrameQueue(FrameQueue* fq) {
 	return res;
 }
 
-double getPresentationTimeFrameQueue(FrameQueue* fq) {
+int64_t getPTSFrameQueue(FrameQueue* fq) {
 	if (fq == NULL) {
-		return 0.0;
+		return 0;
 	}
 
 	SDL_LockMutex(fq->mutex);
-	double res = fq->presentationTime;
+	int64_t res = fq->pts;
 	SDL_UnlockMutex(fq->mutex);
 	return res;
 }
