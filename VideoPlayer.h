@@ -22,7 +22,6 @@ typedef struct VideoPlayer {
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	SDL_Texture* videoFrameTexture;
-	uint8_t* videoFramePixelBuffer;
 	uint8_t* audioSampleBuffer;
 	SDL_AudioDeviceID audioDeviceID;
 
