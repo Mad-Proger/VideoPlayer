@@ -104,7 +104,12 @@ void pullFrameQueue(FrameQueue* fq, SDL_Texture* dst) {
 		SDL_CondWait(fq->cond, fq->mutex);
 	}
 
-	SDL_UpdateTexture(dst, NULL, fq->q[fq->l]->data[0], fq->q[fq->l]->linesize[0]);
+	void* pixels;
+	int linesize;
+	SDL_LockTexture(dst, NULL, &pixels, &linesize);
+	memcpy(pixels, fq->q[fq->l]->data[0], linesize * fq->q[fq->l]->height);
+	SDL_UnlockTexture(dst);
+
 	fq->pts = fq->q[fq->l]->pts;
 	++fq->l;
 	if (fq->l >= fq->maxSize) {
