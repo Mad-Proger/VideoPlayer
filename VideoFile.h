@@ -3,9 +3,9 @@
 #include "MediaStream.h"
 
 typedef struct VideoFile {
-	AVFormatContext* pFormatContext;
-	MediaStream* pVideoStream;
-	MediaStream* pAudioStream;
+    AVFormatContext* pFormatContext;
+    MediaStream* pVideoStream;
+    MediaStream* pAudioStream;
 } VideoFile;
 
 VideoFile* allocVideoFile();

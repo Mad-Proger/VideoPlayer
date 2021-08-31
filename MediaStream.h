@@ -3,11 +3,11 @@
 #include "PacketQueue.h"
 
 typedef struct MediaStream {
-	double baseTime;
-	unsigned int streamIndex;
-	const AVCodec* pStreamCodec;
-	AVCodecContext* pStreamCodecContext;
-	PacketQueue* pq;
+    double baseTime;
+    unsigned int streamIndex;
+    const AVCodec* pStreamCodec;
+    AVCodecContext* pStreamCodecContext;
+    PacketQueue* pq;
 } MediaStream;
 
 void destroyMediaStream(MediaStream* pMediaStream);
