@@ -2,16 +2,16 @@
 #include "include.h"
 
 typedef struct FrameQueue {
-	AVFrame** q;
-	int64_t pts;
-	size_t maxSize;
-	size_t size;
-	size_t l;
-	size_t r;
-	SDL_bool eof;
+    AVFrame** q;
+    int64_t pts;
+    size_t maxSize;
+    size_t size;
+    size_t l;
+    size_t r;
+    SDL_bool eof;
 
-	SDL_mutex* mutex;
-	SDL_cond* cond;
+    SDL_mutex* mutex;
+    SDL_cond* cond;
 } FrameQueue;
 
 FrameQueue* createFrameQueue(size_t queueSize, int pixelFormat, int width, int height);
