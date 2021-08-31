@@ -5,28 +5,28 @@
 #include "FrameQueue.h"
 
 typedef struct VideoPlayer {
-	VideoFile* vf;
+    VideoFile* vf;
 
-	SDL_Thread* demuxThread;
-	SDL_Thread* decodeAudioThread;
-	SDL_Thread* decodeVideoThread;
-	SDL_Thread* renderVideoThread;
+    SDL_Thread* demuxThread;
+    SDL_Thread* decodeAudioThread;
+    SDL_Thread* decodeVideoThread;
+    SDL_Thread* renderVideoThread;
 
-	AudioQueue* audioSampleQueue;
-	FrameQueue* videoFrameQueue;
+    AudioQueue* audioSampleQueue;
+    FrameQueue* videoFrameQueue;
 
-	int width;
-	int height;
-	SDL_Rect renderRect;
-	SDL_bool quit;
-	SDL_Window* window;
-	SDL_Renderer* renderer;
-	SDL_Texture* videoFrameTexture;
-	uint8_t* audioSampleBuffer;
-	SDL_AudioDeviceID audioDeviceID;
+    int width;
+    int height;
+    SDL_Rect renderRect;
+    SDL_bool quit;
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* videoFrameTexture;
+    uint8_t* audioSampleBuffer;
+    SDL_AudioDeviceID audioDeviceID;
 
-	struct SwsContext* videoConvertContext;
-	SwrContext* audioConvertContext;
+    struct SwsContext* videoConvertContext;
+    SwrContext* audioConvertContext;
 } VideoPlayer;
 
 VideoPlayer* createVideoPlayer(VideoFile* vf);
